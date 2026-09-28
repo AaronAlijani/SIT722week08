@@ -73,6 +73,30 @@ jobs:
           kubectl apply \
             -f kubernetes/staging/
 
+      - name: Setup Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: latest
+
+      - name: Add Prometheus community Helm repo
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+
+      - name: Install/upgrade kube-prometheus-stack
+        run: |
+          helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+            --namespace staging \
+            --set grafana.enabled=true \
+            --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false \
+            --wait \
+            --timeout 5m
+
+      - name: Apply ServiceMonitors
+        run: |
+          kubectl apply \
+            -f kubernetes/monitoring/
+
       - name: Update frontend image
         run: |
           kubectl set image deployment/frontend \

@@ -3,6 +3,7 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy.exc import OperationalError
 
 from app.db import Base, engine
@@ -80,6 +81,7 @@ app = FastAPI(
 
 app.include_router(lecturers.router)
 
+Instrumentator().instrument(app).expose(app)
 
 @app.get("/", tags=["Health"])
 def root() -> dict[str, str]:
