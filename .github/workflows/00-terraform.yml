@@ -1,0 +1,33 @@
+name: 00 - Terraform
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths: ['terraform/**']
+  push:
+    branches: [main]
+    paths: ['terraform/**']
+permissions:
+  contents: read
+env:
+  ARM_CLIENT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+  ARM_CLIENT_SECRET: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientSecret }}
+  ARM_SUBSCRIPTION_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+  ARM_TENANT_ID: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+  ARM_ACCESS_KEY: ${{ secrets.ARM_ACCESS_KEY }}
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check
+      - run: terraform init
+      - run: terraform validate
+      - run: terraform plan -out=tfplan
+      - name: Apply
+        if: github.event_name != 'pull_request'
+        run: terraform apply -auto-approve tfplan

@@ -2,7 +2,7 @@ locals {
   k8s_dir = "${path.module}/../kubernetes"
 
   template_vars = {
-    acr_login_server         = azurerm_container_registry.acr.login_server
+    acr_login_server          = azurerm_container_registry.acr.login_server
     storage_connection_string = azurerm_storage_account.storage_account.primary_connection_string
   }
 }
