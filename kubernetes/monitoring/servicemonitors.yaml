@@ -2,92 +2,98 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: user-service
-  namespace: monitoring
+  namespace: staging
   labels:
-    release: prometheus
+    app: user-service
 spec:
-  namespaceSelector:
-    matchNames: [staging]
   selector:
     matchLabels:
       app: user-service
+  namespaceSelector:
+    matchNames:
+      - staging
   endpoints:
-    - targetPort: 8000
+    - port: http
       path: /metrics
       interval: 15s
-
+      targetPort: 8000
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: student-service
-  namespace: monitoring
+  namespace: staging
   labels:
-    release: prometheus
+    app: student-service
 spec:
-  namespaceSelector:
-    matchNames: [staging]
   selector:
     matchLabels:
       app: student-service
+  namespaceSelector:
+    matchNames:
+      - staging
   endpoints:
-    - targetPort: 8000
+    - port: http
       path: /metrics
       interval: 15s
-
+      targetPort: 8000
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: lecturer-service
-  namespace: monitoring
+  namespace: staging
   labels:
-    release: prometheus
+    app: lecturer-service
 spec:
-  namespaceSelector:
-    matchNames: [staging]
   selector:
     matchLabels:
       app: lecturer-service
+  namespaceSelector:
+    matchNames:
+      - staging
   endpoints:
-    - targetPort: 8000
+    - port: http
       path: /metrics
       interval: 15s
-
+      targetPort: 8000
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: course-service
-  namespace: monitoring
+  namespace: staging
   labels:
-    release: prometheus
+    app: course-service
 spec:
-  namespaceSelector:
-    matchNames: [staging]
   selector:
     matchLabels:
       app: course-service
+  namespaceSelector:
+    matchNames:
+      - staging
   endpoints:
-    - targetPort: 8000
+    - port: http
       path: /metrics
       interval: 15s
-
+      targetPort: 8000
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: enrollment-service
-  namespace: monitoring
+  namespace: staging
   labels:
-    release: prometheus
+    app: enrollment-service
 spec:
-  namespaceSelector:
-    matchNames: [staging]
   selector:
     matchLabels:
       app: enrollment-service
+  namespaceSelector:
+    matchNames:
+      - staging
   endpoints:
-    - targetPort: 8000
+    - port: http
       path: /metrics
       interval: 15s
+      targetPort: 8000
