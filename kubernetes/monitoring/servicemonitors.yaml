@@ -1,0 +1,93 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: user-service
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames: [staging]
+  selector:
+    matchLabels:
+      app: user-service
+  endpoints:
+    - targetPort: 8000
+      path: /metrics
+      interval: 15s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: student-service
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames: [staging]
+  selector:
+    matchLabels:
+      app: student-service
+  endpoints:
+    - targetPort: 8000
+      path: /metrics
+      interval: 15s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: lecturer-service
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames: [staging]
+  selector:
+    matchLabels:
+      app: lecturer-service
+  endpoints:
+    - targetPort: 8000
+      path: /metrics
+      interval: 15s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: course-service
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames: [staging]
+  selector:
+    matchLabels:
+      app: course-service
+  endpoints:
+    - targetPort: 8000
+      path: /metrics
+      interval: 15s
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: enrollment-service
+  namespace: monitoring
+  labels:
+    release: prometheus
+spec:
+  namespaceSelector:
+    matchNames: [staging]
+  selector:
+    matchLabels:
+      app: enrollment-service
+  endpoints:
+    - targetPort: 8000
+      path: /metrics
+      interval: 15s
