@@ -87,7 +87,7 @@ const Login = () => {
 
   return (
     <Container maxWidth="sm">
-      <Card sx={{ mt: 10, bgcolor: "#f0a835" }}>  {/* background colour change */}
+      <Card sx={{ mt: 10, bgcolor: "#5cb85c" }}>  {/* background colour change */}
         <CardContent sx={{ p: 4 }}>
           <Typography
             variant="h4"
@@ -100,7 +100,7 @@ const Login = () => {
             color="text.secondary"
             sx={{ mb: 3 }}
           >
-            Sign in to continue (v2 - released by Continuous Deployment)   {/* text change */}
+            Sign in to continue (v3 - blue/green deployment)  {/* text change */}
           </Typography>
 
           {error && (
