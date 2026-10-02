@@ -8,6 +8,7 @@ on:
       - completed
     branches:
       - main
+
 jobs:
   deploy-production:
     name: Deploy to Production
@@ -68,12 +69,6 @@ jobs:
           kubectl apply \
             -f kubernetes/production/
 
-      - name: Update frontend image
-        run: |
-          kubectl set image deployment/frontend \
-            frontend=${{ vars.ACR_LOGIN_SERVER }}/koalatech-frontend:${{ github.event.workflow_run.head_sha }} \
-            -n production
-
       - name: Update user-service image
         run: |
           kubectl set image deployment/user-service \
@@ -104,12 +99,6 @@ jobs:
             enrollment-service=${{ vars.ACR_LOGIN_SERVER }}/koalatech-enrollment-service:${{ github.event.workflow_run.head_sha }} \
             -n production
 
-      - name: Wait for frontend rollout
-        run: |
-          kubectl rollout status deployment/frontend \
-            -n production \
-            --timeout=300s
-
       - name: Wait for user-service rollout
         run: |
           kubectl rollout status deployment/user-service \
@@ -139,6 +128,64 @@ jobs:
           kubectl rollout status deployment/enrollment-service \
             -n production \
             --timeout=300s
+
+      # ---------- Blue/green deployment of the frontend ----------
+
+      - name: Find live and idle frontend slot
+        run: |
+          if ! kubectl get svc frontend -n production >/dev/null 2>&1; then
+            kubectl apply -f kubernetes/bluegreen/frontend-public-service.yaml
+          fi
+          LIVE_APP=$(kubectl get svc frontend -n production -o jsonpath='{.spec.selector.app}')
+          OLD_SELECTOR=$(kubectl get svc frontend -n production -o jsonpath='{.spec.selector}')
+          if [ "$LIVE_APP" = "frontend-blue" ]; then IDLE=green; else IDLE=blue; fi
+          echo "LIVE_APP=$LIVE_APP" >> "$GITHUB_ENV"
+          echo "OLD_SELECTOR=$OLD_SELECTOR" >> "$GITHUB_ENV"
+          echo "IDLE=$IDLE" >> "$GITHUB_ENV"
+          echo "Live: $LIVE_APP | deploying new version to idle slot: $IDLE"
+
+      - name: Deploy new frontend to idle slot
+        run: |
+          IMAGE=${{ vars.ACR_LOGIN_SERVER }}/koalatech-frontend:${{ github.event.workflow_run.head_sha }}
+          sed -e "s|__SLOT__|$IDLE|g" -e "s|__IMAGE__|$IMAGE|g" \
+            kubernetes/bluegreen/frontend-slot.yaml | kubectl apply -f -
+          kubectl rollout status deployment/frontend-$IDLE -n production --timeout=300s
+
+      - name: Smoke test idle slot (no live traffic yet)
+        run: |
+          kubectl port-forward svc/frontend-$IDLE 8081:80 -n production >/dev/null 2>&1 &
+          PF=$!
+          sleep 5
+          python3 scripts/bluegreen_check.py \
+            --url http://127.0.0.1:8081/ \
+            --duration 10 --interval 1 --max-error-rate 0 || { kill $PF; exit 1; }
+          kill $PF
+
+      - name: Switch live traffic to new slot
+        run: |
+          kubectl patch svc frontend -n production --type=json \
+            -p "[{\"op\":\"replace\",\"path\":\"/spec/selector\",\"value\":{\"app\":\"frontend-$IDLE\"}}]"
+          echo "CUTOVER_DONE=true" >> "$GITHUB_ENV"
+          echo "Traffic now goes to frontend-$IDLE"
+
+      - name: Watch error rate after cut-over
+        run: |
+          PUBLIC_IP=$(kubectl get svc frontend -n production -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          echo "Watching http://$PUBLIC_IP/"
+          python3 scripts/bluegreen_check.py \
+            --url http://$PUBLIC_IP/ \
+            --duration 60 --interval 1 --max-error-rate 0.05
+
+      - name: Roll back to previous slot
+        if: ${{ failure() && env.CUTOVER_DONE == 'true' }}
+        run: |
+          kubectl patch svc frontend -n production --type=json \
+            -p "[{\"op\":\"replace\",\"path\":\"/spec/selector\",\"value\":$OLD_SELECTOR}]"
+          echo "::error::Error rate too high after cut-over. Rolled back to $LIVE_APP"
+
+      - name: Remove legacy frontend Deployment
+        run: |
+          kubectl delete deployment frontend -n production --ignore-not-found
 
       - name: Show production resources
         run: |
